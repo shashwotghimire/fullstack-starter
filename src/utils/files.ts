@@ -1,6 +1,22 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { FileEntry, TemplateTokens } from "../types";
+
+type BunLike = {
+  argv: string[];
+  write(path: string, contents: string): Promise<unknown>;
+};
+
+function getBun(): BunLike | undefined {
+  return typeof Bun === "undefined" ? undefined : Bun;
+}
+
+export function getRuntimeArgv(
+  bunArgv?: string[],
+  nodeArgv?: string[],
+): string[] {
+  return (bunArgv ?? nodeArgv ?? getBun()?.argv ?? process.argv).slice(2);
+}
 
 export function renderTemplate(contents: string, tokens: TemplateTokens): string {
   return Object.entries(tokens).reduce(
@@ -15,7 +31,13 @@ export async function ensureDir(dirPath: string): Promise<void> {
 
 export async function writeTextFile(path: string, contents: string): Promise<void> {
   await ensureDir(dirname(path));
-  await Bun.write(path, contents);
+  const bun = getBun();
+  if (bun) {
+    await bun.write(path, contents);
+    return;
+  }
+
+  await writeFile(path, contents, "utf8");
 }
 
 export async function writeFiles(

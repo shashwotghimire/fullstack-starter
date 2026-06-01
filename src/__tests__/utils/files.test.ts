@@ -1,10 +1,15 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "bun:test";
-import { renderTemplate, writeTextFile } from "../../utils/files";
+import { getRuntimeArgv, renderTemplate, writeTextFile } from "../../utils/files";
 import { cleanup, read, tempProjectDir } from "../testUtils";
 
 describe("files utilities", () => {
+  it("reads CLI args from a supplied runtime argv", () => {
+    expect(getRuntimeArgv(["bun", "src/index.ts", "demo-app"])).toEqual(["demo-app"]);
+    expect(getRuntimeArgv(undefined, ["node", "dist/index.js", "demo-app"])).toEqual(["demo-app"]);
+  });
+
   it("replaces all template tokens", () => {
     const result = renderTemplate("{{PROJECT_NAME}}/{{PROJECT_NAME}}/{{DB_NAME}}", {
       PROJECT_NAME: "sample-app",

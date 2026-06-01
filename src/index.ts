@@ -1,4 +1,5 @@
 #!/usr/bin/env node
 import { runCLI } from "./cli";
+import { getRuntimeArgv } from "./utils/files";
 
-await runCLI(Bun.argv.slice(2));
+await runCLI(getRuntimeArgv());

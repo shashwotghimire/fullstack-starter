@@ -9,13 +9,28 @@ const defaultProjectName = "my-pern-app";
 type ParsedArgs = {
   projectName?: string;
   skipInstall: boolean;
+  help: boolean;
 };
 
-function parseArgs(args: string[]): ParsedArgs {
+export function parseArgs(args: string[]): ParsedArgs {
+  const help = args.includes("--help") || args.includes("-h");
   const skipInstall = args.includes("--skip-install");
   const projectName = args.find((arg) => !arg.startsWith("-"));
 
-  return { projectName, skipInstall };
+  return { projectName, skipInstall, help };
+}
+
+function usage(): string {
+  return [
+    "create-pern-app",
+    "",
+    "Usage:",
+    "  create-pern-app [project-name] [--skip-install]",
+    "",
+    "Options:",
+    "  --skip-install  Generate files without installing dependencies",
+    "  -h, --help      Show this help message",
+  ].join("\n");
 }
 
 function assertNotCanceled<T>(value: T | symbol): T {
@@ -82,6 +97,11 @@ async function promptDatabaseSetup(docker: boolean): Promise<DatabaseSetup> {
 
 export async function runCLI(args: string[]): Promise<void> {
   const parsedArgs = parseArgs(args);
+
+  if (parsedArgs.help) {
+    console.log(usage());
+    return;
+  }
 
   intro("create-pern-app");
 
