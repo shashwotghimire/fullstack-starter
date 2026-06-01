@@ -86,6 +86,7 @@ const client = postgres(getEnv("DATABASE_URL"));
 export const db = drizzle(client, { schema });
 `,
     },
+    { path: "server/src/db/migrations/.gitkeep", contents: "" },
   ];
 }
 

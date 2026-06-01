@@ -20,6 +20,7 @@ describe("generateOrmFiles", () => {
 
     expect(paths).toContain("drizzle.config.ts");
     expect(paths).toContain("server/src/db/schema.ts");
+    expect(paths).toContain("server/src/db/migrations/.gitkeep");
     expect(files.find((file) => file.path === "server/src/db/schema.ts")?.contents).toContain(
       'pgTable("users"',
     );
