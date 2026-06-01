@@ -414,103 +414,16 @@ describe("errorHandler", () => {
   });
 });
 ` },
-    { path: "client/index.html", contents: `<div id="root"></div><script type="module" src="/src/main.tsx"></script>\n` },
-    { path: "client/src/lib/auth.ts", contents: `const tokenKey = "create-pern-app-token";
-
-export function getAuthToken(): string | null {
-  return localStorage.getItem(tokenKey);
-}
-
-export function setAuthToken(token: string): void {
-  localStorage.setItem(tokenKey, token);
-}
-
-export function clearAuthToken(): void {
-  localStorage.removeItem(tokenKey);
-}
-` },
-    { path: "client/src/lib/axios.ts", contents: `import axios from "axios";
-import { getAuthToken } from "./auth";
-
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  headers: { "Content-Type": "application/json" },
-});
-
-api.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) {
-    config.headers.Authorization = \`Bearer \${token}\`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-      const message = (error.response?.data as { message?: string } | undefined)?.message;
-      throw new Error(message ?? error.message);
-    }
-    throw error;
-  },
-);
-` },
-    { path: "client/src/lib/queryClient.ts", contents: `import { QueryClient } from "@tanstack/react-query";
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60,
-      retry: 1,
-    },
-  },
-});
-` },
-    { path: "client/src/utils/queryKeys.ts", contents: `export const queryKeys = {
-  health: ["health"] as const,
-};
-` },
+    { path: "client/index.html", contents: readTemplate("base/client/index.html") },
+    { path: "client/src/lib/auth.ts", contents: readTemplate("base/client/src/lib/auth.ts") },
+    { path: "client/src/lib/axios.ts", contents: readTemplate("base/client/src/lib/axios.ts") },
+    { path: "client/src/lib/queryClient.ts", contents: readTemplate("base/client/src/lib/queryClient.ts") },
+    { path: "client/src/utils/queryKeys.ts", contents: readTemplate("base/client/src/utils/queryKeys.ts") },
     { path: "client/src/hooks/useHealthCheck.ts", contents: readTemplate("base/client/src/hooks/useHealthCheck.ts") },
     { path: "client/src/pages/HomePage.tsx", contents: readTemplate("base/client/src/pages/HomePage.tsx") },
     { path: "client/src/pages/HealthPage.tsx", contents: readTemplate("base/client/src/pages/HealthPage.tsx") },
-    { path: "client/src/App.tsx", contents: `import { Link, Route, Routes } from "react-router-dom";
-import { routes } from "./constants";
-import HealthPage from "./pages/HealthPage";
-import HomePage from "./pages/HomePage";
-
-export default function App() {
-  return (
-    <>
-      <nav>
-        <Link to={routes.home}>Home</Link>
-        <Link to={routes.health}>Health</Link>
-      </nav>
-      <Routes>
-        <Route path={routes.home} element={<HomePage />} />
-        <Route path={routes.health} element={<HealthPage />} />
-      </Routes>
-    </>
-  );
-}
-` },
-    { path: "client/src/main.tsx", contents: `import { QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-import App from "./App";
-import { queryClient } from "./lib/queryClient";
-
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
-` },
+    { path: "client/src/App.tsx", contents: readTemplate("base/client/src/App.tsx") },
+    { path: "client/src/main.tsx", contents: readTemplate("base/client/src/main.tsx") },
     { path: "client/src/test/handlers.ts", contents: `import { rest } from "msw";
 
 export const handlers = [
