@@ -299,46 +299,13 @@ export default router;
       path: "client/vite.config.ts",
       contents: readTemplate("base/client/vite.config.ts"),
     },
-    { path: "server/src/constants/index.ts", contents: `export const defaultPort = 8080;\nexport const clientOrigin = "http://localhost:5173";\n` },
+    { path: "server/src/constants/index.ts", contents: readTemplate("base/server/src/constants/index.ts") },
     { path: "client/src/constants/index.ts", contents: `export const routes = { home: "/", health: "/health" } as const;\n` },
-    { path: "server/src/types/index.ts", contents: `export type HealthResponse = { status: "ok"; timestamp: string };\n` },
-    { path: "server/src/utils/env.ts", contents: `import { defaultPort } from "../constants";
-
-const bunEnv = typeof Bun === "undefined" ? undefined : Bun.env;
-
-export function getEnv(name: string, fallback?: string): string {
-  const value = bunEnv?.[name] ?? process.env[name] ?? fallback;
-  if (!value) {
-    throw new Error(\`Missing environment variable: \${name}\`);
-  }
-  return value;
-}
-
-export function getPort(): number {
-  return Number(getEnv("PORT", String(defaultPort)));
-}
-
-export function getNodeEnv(): string {
-  return getEnv("NODE_ENV", "development");
-}
-` },
+    { path: "server/src/types/index.ts", contents: readTemplate("base/server/src/types/index.ts") },
+    { path: "server/src/utils/env.ts", contents: readTemplate("base/server/src/utils/env.ts") },
     { path: "server/src/utils/response.ts", contents: readTemplate("base/server/src/utils/response.ts") },
-    { path: "server/src/controllers/healthController.ts", contents: `import type { Request, Response } from "express";
-import { sendSuccess } from "../utils/response";
-
-export function getHealth(_req: Request, res: Response): void {
-  sendSuccess(res, { status: "ok", timestamp: new Date().toISOString() });
-}
-` },
-    { path: "server/src/routes/health.ts", contents: `import { Router } from "express";
-import { getHealth } from "../controllers/healthController";
-
-const router = Router();
-
-router.get("/", getHealth);
-
-export default router;
-` },
+    { path: "server/src/controllers/healthController.ts", contents: readTemplate("base/server/src/controllers/healthController.ts") },
+    { path: "server/src/routes/health.ts", contents: readTemplate("base/server/src/routes/health.ts") },
     { path: "server/src/routes/index.ts", contents: routesIndex },
     { path: "server/src/middleware/notFound.ts", contents: readTemplate("base/server/src/middleware/notFound.ts") },
     { path: "server/src/middleware/errorHandler.ts", contents: readTemplate("base/server/src/middleware/errorHandler.ts") },
@@ -362,58 +329,10 @@ ${sessionUse}  app.use("/api", apiRouter);
 export const app = createApp();
 ` },
     { path: "server/src/server.ts", contents: serverEntry() },
-    { path: "server/src/test/setup.ts", contents: `process.env.PORT ??= "8080";
-process.env.NODE_ENV ??= "test";
-process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/{{DB_NAME}}";
-process.env.JWT_SECRET ??= "test-secret";
-process.env.JWT_EXPIRES_IN ??= "15m";
-process.env.SESSION_SECRET ??= "test-secret";
-
-const appModule = await import("../app");
-
-export const app = appModule.app;
-` },
-    { path: "server/src/__tests__/health.test.ts", contents: `import request from "supertest";
-import { describe, expect, it } from "vitest";
-import { app } from "../test/setup";
-
-describe("GET /api/health", () => {
-  it("returns health status", async () => {
-    const response = await request(app).get("/api/health");
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe("ok");
-    expect(typeof response.body.timestamp).toBe("string");
-  });
-});
-` },
-    { path: "server/src/__tests__/middleware/notFound.test.ts", contents: `import request from "supertest";
-import { describe, expect, it } from "vitest";
-import { app } from "../../test/setup";
-
-describe("notFound", () => {
-  it("returns 404 for unknown routes", async () => {
-    const response = await request(app).get("/missing");
-    expect(response.status).toBe(404);
-    expect(response.body.message).toContain("Route not found");
-  });
-});
-` },
-    { path: "server/src/__tests__/middleware/errorHandler.test.ts", contents: `import express from "express";
-import request from "supertest";
-import { describe, expect, it } from "vitest";
-import { errorHandler } from "../../middleware/errorHandler";
-
-describe("errorHandler", () => {
-  it("returns a normalized error response", async () => {
-    const app = express();
-    app.get("/boom", (_req, _res, next) => next(new Error("Boom")));
-    app.use(errorHandler);
-    const response = await request(app).get("/boom");
-    expect(response.status).toBe(500);
-    expect(response.body.message).toBe("Boom");
-  });
-});
-` },
+    { path: "server/src/test/setup.ts", contents: readTemplate("base/server/src/test/setup.ts") },
+    { path: "server/src/__tests__/health.test.ts", contents: readTemplate("base/server/src/__tests__/health.test.ts") },
+    { path: "server/src/__tests__/middleware/notFound.test.ts", contents: readTemplate("base/server/src/__tests__/middleware/notFound.test.ts") },
+    { path: "server/src/__tests__/middleware/errorHandler.test.ts", contents: readTemplate("base/server/src/__tests__/middleware/errorHandler.test.ts") },
     { path: "client/index.html", contents: readTemplate("base/client/index.html") },
     { path: "client/src/lib/auth.ts", contents: readTemplate("base/client/src/lib/auth.ts") },
     { path: "client/src/lib/axios.ts", contents: readTemplate("base/client/src/lib/axios.ts") },
