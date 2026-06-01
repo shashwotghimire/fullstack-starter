@@ -33,6 +33,10 @@ function usage(): string {
   ].join("\n");
 }
 
+export function shouldIncludeDockerStart(docker: boolean, databaseSetup: DatabaseSetup): boolean {
+  return docker && databaseSetup.mode !== "docker";
+}
+
 function assertNotCanceled<T>(value: T | symbol): T {
   if (isCancel(value)) {
     cancel("Scaffold canceled.");
@@ -151,5 +155,9 @@ export async function runCLI(args: string[]): Promise<void> {
     console.warn(warn("Database setup failed. Files were left intact and git init was skipped."));
     console.warn(warn("Recovery: start Postgres, then run cd server && bun run db:migrate."));
   }
-  outro(successBox(projectName, docker));
+  outro(
+    successBox(projectName, {
+      includeDockerStart: shouldIncludeDockerStart(docker, databaseSetup),
+    }),
+  );
 }

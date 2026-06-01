@@ -15,8 +15,12 @@ export function warn(message: string): string {
   return `${yellow}warn${reset} ${message}`;
 }
 
-export function successBox(projectName: string, includeDocker: boolean): string {
-  const dockerStep = includeDocker ? "  docker compose up -d\n" : "";
+type SuccessBoxOptions = {
+  includeDockerStart: boolean;
+};
+
+export function successBox(projectName: string, options: SuccessBoxOptions): string {
+  const dockerStep = options.includeDockerStart ? "  docker compose up -d\n" : "";
 
   return [
     "✅ Your PERN app is ready!",
