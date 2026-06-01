@@ -38,6 +38,10 @@ export const db = globalForPrisma.prisma ?? new PrismaClient();
 if (getNodeEnv() !== "production") {
   globalForPrisma.prisma = db;
 }
+
+export async function connectDb(): Promise<void> {
+  await db.$connect();
+}
 `,
     },
   ];
@@ -84,6 +88,10 @@ import * as schema from "./schema";
 const client = postgres(getEnv("DATABASE_URL"));
 
 export const db = drizzle(client, { schema });
+
+export async function connectDb(): Promise<void> {
+  await client\`select 1\`;
+}
 `,
     },
     { path: "server/src/db/migrations/.gitkeep", contents: "" },

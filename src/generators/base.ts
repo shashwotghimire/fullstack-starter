@@ -234,16 +234,16 @@ Client:
 `;
 }
 
-function serverEntry(options: ScaffoldOptions): string {
-  const dbImport = options.orm === "prisma" ? `import { db } from "./db";\n` : `import "./db";\n`;
-  const dbConnect = options.orm === "prisma" ? `await db.$connect();\n` : "";
-
-  return `${dbImport}import { app } from "./app";
+function serverEntry(): string {
+  return `import { app } from "./app";
+import { connectDb } from "./db";
 import { getNodeEnv, getPort } from "./utils/env";
 
 const port = getPort();
 
-${dbConnect}app.listen(port, () => {
+await connectDb();
+
+app.listen(port, () => {
   console.info(\`Server listening on port \${port}\`);
   console.info(\`Environment: \${getNodeEnv()}\`);
   console.info("Database: connected");
@@ -361,7 +361,7 @@ ${sessionUse}  app.use("/api", apiRouter);
 
 export const app = createApp();
 ` },
-    { path: "server/src/server.ts", contents: serverEntry(options) },
+    { path: "server/src/server.ts", contents: serverEntry() },
     { path: "server/src/test/setup.ts", contents: `process.env.PORT ??= "8080";
 process.env.NODE_ENV ??= "test";
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/{{DB_NAME}}";

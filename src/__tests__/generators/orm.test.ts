@@ -12,6 +12,9 @@ describe("generateOrmFiles", () => {
     expect(files.find((file) => file.path === "prisma/schema.prisma")?.contents).toContain(
       "model User",
     );
+    expect(files.find((file) => file.path === "server/src/db/index.ts")?.contents).toContain(
+      "connectDb",
+    );
   });
 
   it("generates Drizzle schema and config", () => {
@@ -23,6 +26,12 @@ describe("generateOrmFiles", () => {
     expect(paths).toContain("server/src/db/migrations/.gitkeep");
     expect(files.find((file) => file.path === "server/src/db/schema.ts")?.contents).toContain(
       'pgTable("users"',
+    );
+    expect(files.find((file) => file.path === "server/src/db/index.ts")?.contents).toContain(
+      "connectDb",
+    );
+    expect(files.find((file) => file.path === "server/src/db/index.ts")?.contents).toContain(
+      "select 1",
     );
   });
 });

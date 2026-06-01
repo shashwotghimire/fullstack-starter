@@ -51,4 +51,13 @@ describe("generateBaseFiles", () => {
 
     expect(routes?.contents).toContain('router.use("/auth", authRouter)');
   });
+
+  it("connects the database before listening", () => {
+    const server = generateBaseFiles(baseOptions()).find(
+      (file) => file.path === "server/src/server.ts",
+    );
+
+    expect(server?.contents).toContain('import { connectDb } from "./db"');
+    expect(server?.contents).toContain("await connectDb()");
+  });
 });
