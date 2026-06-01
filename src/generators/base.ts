@@ -1,4 +1,5 @@
 import type { FileEntry, ScaffoldOptions } from "../types";
+import { readTemplate } from "../utils/templates";
 
 function parseDependency(entry: string): [string, string] {
   const [name, version] = entry.replaceAll('"', "").split(": ");
@@ -277,7 +278,7 @@ export default router;
     options.auth === "session" ? `import { sessionMiddleware } from "./middleware/session";\n` : "";
   const sessionUse = options.auth === "session" ? `  app.use(sessionMiddleware);\n` : "";
   const files: FileEntry[] = [
-    { path: ".gitignore", contents: "node_modules\ndist\n**/.env\nserver/src/generated/prisma\n" },
+    { path: ".gitignore", contents: readTemplate("base/.gitignore") },
     { path: "README.md", contents: readme(options) },
     { path: "server/package.json", contents: serverPackageJson(options) },
     { path: "server/.env.example", contents: serverEnvExample(options) },
@@ -288,25 +289,15 @@ export default router;
     { path: "client/src/components/.gitkeep", contents: "" },
     {
       path: "server/tsconfig.json",
-      contents: `{"compilerOptions":{"target":"ES2022","module":"ESNext","moduleResolution":"Bundler","strict":true,"types":["bun"],"skipLibCheck":true,"noEmit":true},"include":["src/**/*.ts"]}\n`,
+      contents: readTemplate("base/server/tsconfig.json"),
     },
     {
       path: "client/tsconfig.json",
-      contents: `{"compilerOptions":{"target":"ES2022","useDefineForClassFields":true,"lib":["DOM","DOM.Iterable","ES2022"],"allowJs":false,"skipLibCheck":true,"esModuleInterop":true,"allowSyntheticDefaultImports":true,"strict":true,"forceConsistentCasingInFileNames":true,"module":"ESNext","moduleResolution":"Bundler","resolveJsonModule":true,"isolatedModules":true,"noEmit":true,"jsx":"react-jsx"},"include":["src"]}\n`,
+      contents: readTemplate("base/client/tsconfig.json"),
     },
     {
       path: "client/vite.config.ts",
-      contents: `import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-  },
-});
-`,
+      contents: readTemplate("base/client/vite.config.ts"),
     },
     { path: "server/src/constants/index.ts", contents: `export const defaultPort = 8080;\nexport const clientOrigin = "http://localhost:5173";\n` },
     { path: "client/src/constants/index.ts", contents: `export const routes = { home: "/", health: "/health" } as const;\n` },
@@ -331,16 +322,7 @@ export function getNodeEnv(): string {
   return getEnv("NODE_ENV", "development");
 }
 ` },
-    { path: "server/src/utils/response.ts", contents: `import type { Response } from "express";
-
-export function sendSuccess<T>(res: Response, data: T, statusCode = 200): void {
-  res.status(statusCode).json(data);
-}
-
-export function sendError(res: Response, message: string, statusCode = 500): void {
-  res.status(statusCode).json({ message });
-}
-` },
+    { path: "server/src/utils/response.ts", contents: readTemplate("base/server/src/utils/response.ts") },
     { path: "server/src/controllers/healthController.ts", contents: `import type { Request, Response } from "express";
 import { sendSuccess } from "../utils/response";
 
@@ -358,26 +340,8 @@ router.get("/", getHealth);
 export default router;
 ` },
     { path: "server/src/routes/index.ts", contents: routesIndex },
-    { path: "server/src/middleware/notFound.ts", contents: `import type { NextFunction, Request, Response } from "express";
-
-export function notFound(req: Request, res: Response, next: NextFunction): void {
-  res.status(404);
-  next(new Error(\`Route not found: \${req.method} \${req.originalUrl}\`));
-}
-` },
-    { path: "server/src/middleware/errorHandler.ts", contents: `import type { NextFunction, Request, Response } from "express";
-import { sendError } from "../utils/response";
-
-export function errorHandler(
-  error: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  sendError(res, error.message, statusCode);
-}
-` },
+    { path: "server/src/middleware/notFound.ts", contents: readTemplate("base/server/src/middleware/notFound.ts") },
+    { path: "server/src/middleware/errorHandler.ts", contents: readTemplate("base/server/src/middleware/errorHandler.ts") },
     { path: "server/src/app.ts", contents: `import cors from "cors";
 import express from "express";
 import { clientOrigin } from "./constants";
@@ -507,39 +471,9 @@ export const queryClient = new QueryClient({
   health: ["health"] as const,
 };
 ` },
-    { path: "client/src/hooks/useHealthCheck.ts", contents: `import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/axios";
-import { queryKeys } from "../utils/queryKeys";
-
-type HealthResponse = { status: "ok"; timestamp: string };
-
-async function fetchHealth(): Promise<HealthResponse> {
-  const response = await api.get<HealthResponse>("/api/health");
-  return response.data;
-}
-
-export function useHealthCheck() {
-  return useQuery({ queryKey: queryKeys.health, queryFn: fetchHealth });
-}
-` },
-    { path: "client/src/pages/HomePage.tsx", contents: `export default function HomePage() {
-  return (
-    <section>
-      <h1>{{PROJECT_NAME}}</h1>
-      <p>A TypeScript PERN starter with React, Express, and PostgreSQL.</p>
-    </section>
-  );
-}
-` },
-    { path: "client/src/pages/HealthPage.tsx", contents: `import { useHealthCheck } from "../hooks/useHealthCheck";
-
-export default function HealthPage() {
-  const { data, isLoading, isError } = useHealthCheck();
-  const connected = data?.status === "ok" && !isLoading && !isError;
-
-  return <p>{connected ? "API connected ✅" : "API unavailable ❌"}</p>;
-}
-` },
+    { path: "client/src/hooks/useHealthCheck.ts", contents: readTemplate("base/client/src/hooks/useHealthCheck.ts") },
+    { path: "client/src/pages/HomePage.tsx", contents: readTemplate("base/client/src/pages/HomePage.tsx") },
+    { path: "client/src/pages/HealthPage.tsx", contents: readTemplate("base/client/src/pages/HealthPage.tsx") },
     { path: "client/src/App.tsx", contents: `import { Link, Route, Routes } from "react-router-dom";
 import { routes } from "./constants";
 import HealthPage from "./pages/HealthPage";
