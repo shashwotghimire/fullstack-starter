@@ -8,6 +8,7 @@ describe("scaffoldProject", () => {
   it("plans ORM-specific database setup commands", () => {
     expect(getDbSetupScripts("prisma")).toEqual(["db:migrate:init"]);
     expect(getDbSetupScripts("drizzle")).toEqual(["db:generate", "db:migrate"]);
+    expect(getDbSetupScripts("sequelize")).toEqual(["db:migrate"]);
   });
 
   it("generates the expected project tree with token replacement", async () => {

@@ -35,6 +35,42 @@ export async function loginUser(input: LoginInput): Promise<AuthResult> {
 `;
   }
 
+  if (options.orm === "sequelize") {
+    return `import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { User } from "../db";
+import { getEnv } from "../utils/env";
+import type { LoginInput, RegisterInput } from "../validators/authValidator";
+
+type AuthResult = { token: string; user: { id: string; email: string; name: string } };
+
+function publicUser(user: User): AuthResult["user"] {
+  return { id: user.id, email: user.email, name: user.name };
+}
+
+function signToken(userId: string): string {
+  return jwt.sign({ sub: userId }, getEnv("JWT_SECRET"), {
+    expiresIn: getEnv("JWT_EXPIRES_IN", "15m"),
+  } as jwt.SignOptions);
+}
+
+export async function registerUser(input: RegisterInput): Promise<AuthResult> {
+  const passwordHash = await bcrypt.hash(input.password, 10);
+  const user = await User.create({ email: input.email, name: input.name, passwordHash });
+  return { token: signToken(user.id), user: publicUser(user) };
+}
+
+export async function loginUser(input: LoginInput): Promise<AuthResult> {
+  const user = await User.findOne({ where: { email: input.email } });
+  const validPassword = user ? await bcrypt.compare(input.password, user.passwordHash) : false;
+  if (!user || !validPassword) {
+    throw new Error("Invalid email or password");
+  }
+  return { token: signToken(user.id), user: publicUser(user) };
+}
+`;
+  }
+
   return `import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -124,12 +160,13 @@ export function verifyToken(req: Request, res: Response, next: NextFunction): vo
       path: "server/src/controllers/authController.ts",
       contents: `import type { Request, Response } from "express";
 import { loginUser, registerUser } from "../services/authService";
+import { httpStatus } from "../constants";
 import { sendSuccess } from "../utils/response";
 import { loginSchema, registerSchema } from "../validators/authValidator";
 
 export async function register(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
-  sendSuccess(res, await registerUser(input), 201);
+  sendSuccess(res, await registerUser(input), httpStatus.created);
 }
 
 export async function login(req: Request, res: Response): Promise<void> {

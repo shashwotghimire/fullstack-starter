@@ -34,4 +34,23 @@ describe("generateOrmFiles", () => {
       "select 1",
     );
   });
+
+  it("generates Sequelize models, config, and migration", () => {
+    const files = generateOrmFiles(baseOptions({ orm: "sequelize" }));
+    const paths = files.map((file) => file.path);
+
+    expect(paths).toContain("config/config.js");
+    expect(paths).toContain("sequelize/migrations/001-create-users.cjs");
+    expect(paths).toContain("server/src/db/index.ts");
+    expect(paths).toContain("server/src/db/models/user.ts");
+    expect(files.find((file) => file.path === "server/src/db/models/user.ts")?.contents).toContain(
+      "class User",
+    );
+    expect(files.find((file) => file.path === "server/src/db/index.ts")?.contents).toContain(
+      "sequelize.authenticate",
+    );
+    expect(files.find((file) => file.path === "config/config.js")?.contents).toContain(
+      "module.exports",
+    );
+  });
 });

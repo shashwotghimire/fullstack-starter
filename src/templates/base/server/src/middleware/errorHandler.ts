@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { httpStatus } from "../constants";
 import { sendError } from "../utils/response";
 
 export function errorHandler(
@@ -7,6 +8,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode =
+    res.statusCode === httpStatus.ok ? httpStatus.internalServerError : res.statusCode;
   sendError(res, error.message, statusCode);
 }

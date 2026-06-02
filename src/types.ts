@@ -1,4 +1,4 @@
-export type OrmChoice = "prisma" | "drizzle";
+export type OrmChoice = "prisma" | "drizzle" | "sequelize";
 
 export type AuthChoice = "none" | "jwt" | "session";
 

@@ -24,7 +24,15 @@ function tokens(options: ScaffoldOptions): TemplateTokens {
 }
 
 export function getDbSetupScripts(orm: OrmChoice): string[] {
-  return orm === "drizzle" ? ["db:generate", "db:migrate"] : ["db:migrate:init"];
+  if (orm === "drizzle") {
+    return ["db:generate", "db:migrate"];
+  }
+
+  if (orm === "sequelize") {
+    return ["db:migrate"];
+  }
+
+  return ["db:migrate:init"];
 }
 
 function normalizeError(error: unknown): Error {

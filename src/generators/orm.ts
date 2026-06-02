@@ -98,6 +98,164 @@ export async function connectDb(): Promise<void> {
   ];
 }
 
+function sequelizeFiles(): FileEntry[] {
+  return [
+    {
+      path: "config/config.js",
+      contents: `module.exports = {
+  development: {
+    url: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/{{DB_NAME}}",
+    dialect: "postgres",
+  },
+  production: {
+    url: process.env.DATABASE_URL,
+    dialect: "postgres",
+  },
+};
+`,
+    },
+    {
+      path: "sequelize/migrations/001-create-users.cjs",
+      contents: `"use strict";
+
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+    await queryInterface.createTable("users", {
+      id: {
+        type: Sequelize.UUID,
+        primaryKey: true,
+        allowNull: false,
+        defaultValue: Sequelize.literal("gen_random_uuid()"),
+      },
+      email: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+      name: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+      },
+      password_hash: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal("now()"),
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal("now()"),
+      },
+    });
+  },
+
+  async down(queryInterface) {
+    await queryInterface.dropTable("users");
+  },
+};
+`,
+    },
+    {
+      path: "server/src/db/models/user.ts",
+      contents: `import {
+  CreationOptional,
+  DataTypes,
+  InferAttributes,
+  InferCreationAttributes,
+  Model,
+  Sequelize,
+} from "sequelize";
+
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+  declare id: CreationOptional<string>;
+  declare email: string;
+  declare name: string;
+  declare passwordHash: string;
+  declare createdAt: CreationOptional<Date>;
+  declare updatedAt: CreationOptional<Date>;
+}
+
+export function initUserModel(sequelize: Sequelize): void {
+  User.init(
+    {
+      id: {
+        type: DataTypes.UUID,
+        primaryKey: true,
+        allowNull: false,
+        defaultValue: Sequelize.literal("gen_random_uuid()"),
+      },
+      email: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+      },
+      name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+      },
+      passwordHash: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        field: "password_hash",
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        field: "created_at",
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        field: "updated_at",
+      },
+    },
+    {
+      sequelize,
+      tableName: "users",
+      underscored: true,
+      timestamps: true,
+    },
+  );
+}
+`,
+    },
+    {
+      path: "server/src/db/index.ts",
+      contents: `import { Sequelize } from "sequelize";
+import { getEnv } from "../utils/env";
+import { initUserModel, User } from "./models/user";
+
+export const sequelize = new Sequelize(getEnv("DATABASE_URL"), {
+  dialect: "postgres",
+  logging: false,
+});
+
+initUserModel(sequelize);
+
+export const db = sequelize;
+export { User };
+
+export async function connectDb(): Promise<void> {
+  await sequelize.authenticate();
+}
+`,
+    },
+  ];
+}
+
 export function generateOrmFiles(options: ScaffoldOptions): FileEntry[] {
-  return options.orm === "prisma" ? prismaFiles() : drizzleFiles();
+  if (options.orm === "prisma") {
+    return prismaFiles();
+  }
+
+  if (options.orm === "sequelize") {
+    return sequelizeFiles();
+  }
+
+  return drizzleFiles();
 }

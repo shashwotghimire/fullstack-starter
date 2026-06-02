@@ -116,6 +116,7 @@ export async function runCLI(args: string[]): Promise<void> {
       options: [
         { value: "prisma", label: "Prisma", hint: "schema-first, great DX" },
         { value: "drizzle", label: "Drizzle ORM", hint: "lightweight and SQL-like" },
+        { value: "sequelize", label: "Sequelize v6", hint: "mature model-based ORM" },
       ],
     }),
   );

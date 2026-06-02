@@ -48,6 +48,7 @@ When the user runs `npx create-pern-app`, they are walked through these prompts 
 2. **ORM selection** *(single select)*
    - `Prisma` — schema-first, great DX, auto-migrations
    - `Drizzle ORM` — lightweight, SQL-like, type-safe
+   - `Sequelize v6` — mature model-based ORM
 
 3. **Authentication** *(single select)*
    - `None` — skip auth setup
@@ -125,7 +126,7 @@ my-pern-app/
 │   ├── tsconfig.json
 │   └── package.json
 │
-├── [ORM config files]           # prisma/schema.prisma OR drizzle.config.ts
+├── [ORM config files]           # prisma/schema.prisma OR drizzle.config.ts OR config/config.js
 ├── docker-compose.yml           # (if selected)
 ├── .gitignore
 ├── .prettierrc                  # (if selected)
@@ -138,11 +139,11 @@ my-pern-app/
 
 ## ORM-Specific Scaffolding
 
-> **MVP scope: Prisma and Drizzle only.**
+> **MVP scope: Prisma, Drizzle, and Sequelize v6 only.**
 
 ### Shared: User Table Schema
 
-Both ORMs must scaffold an initial `users` table with the following fields. The CLI writes the schema first, then can run the ORM's migration flow only when DB setup is explicitly selected and a reachable Postgres database is available.
+All ORMs must scaffold an initial `users` table with the following fields. The CLI writes the schema first, then can run the ORM's migration flow only when DB setup is explicitly selected and a reachable Postgres database is available.
 
 | Column | Type | Constraints |
 |---|---|---|
@@ -165,6 +166,14 @@ Both ORMs must scaffold an initial `users` table with the following fields. The 
 - `server/src/db/schema.ts` — `users` table defined with `pgTable` matching the schema above, including `pgEnum` or `uuid` helpers as needed
 - `server/src/db/index.ts` exports a `drizzle(pool)` instance using the `postgres` driver
 - `server/src/db/migrations/` — initial migration generated/applied via `drizzle-kit generate` and `drizzle-kit migrate` only when DB setup is selected
+- Scripts: `db:generate`, `db:migrate`
+- `server/.env` includes `DATABASE_URL`
+
+### Sequelize v6
+- `config/config.js` at root for `sequelize-cli` migrations
+- `sequelize/migrations/001-create-users.cjs` — initial migration matching the shared `users` schema
+- `server/src/db/models/user.ts` — typed Sequelize `User` model matching the schema above
+- `server/src/db/index.ts` exports a Sequelize instance plus initialized models
 - Scripts: `db:generate`, `db:migrate`
 - `server/.env` includes `DATABASE_URL`
 
@@ -265,7 +274,8 @@ Client scripts live in `client/package.json`:
 
 `server/src/server.ts` must:
 - Load `server/.env` via Bun's built-in env or `dotenv`
-- Initialize the DB connection if required by the selected ORM/auth path
+- For Prisma: do not explicitly initialize a DB connection on startup; Prisma connects lazily when first used
+- For Drizzle and Sequelize: initialize the DB connection if required by the selected ORM/auth path, without blocking `/api/health` startup
 - Import the app from `app.ts`
 - Listen on `PORT=8080` from env
 - Log startup info: port, DB connection status, environment
@@ -323,7 +333,7 @@ src/
 ├── scaffold.ts        # Reads user choices, calls generators
 ├── generators/
 │   ├── base.ts        # Copies shared base templates
-│   ├── orm.ts         # ORM-specific file generation (prisma | drizzle)
+│   ├── orm.ts         # ORM-specific file generation (prisma | drizzle | sequelize)
 │   ├── auth.ts        # Auth-specific file generation
 │   └── docker.ts      # docker-compose generation
 ├── templates/         # Static template files (copied verbatim or with tokens replaced)
@@ -533,7 +543,7 @@ cd client && bun run test
 ## MVP Scope — What's In vs Out
 
 ### ✅ In Scope (MVP)
-- ORM choice: Prisma or Drizzle only
+- ORM choice: Prisma, Drizzle, or Sequelize v6 only
 - Auth prompt scaffolding (JWT or Session or None)
 - Docker Compose option
 - ESLint + Prettier option
